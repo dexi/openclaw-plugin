@@ -1,0 +1,98 @@
+{
+  "id": "openclaw-dexi",
+  "name": "Dexi",
+  "description": "Your Dexi notes library as OpenClaw's long-term memory: auto-recall before each turn, dexi_* tools, /remember and /recall, optional session digest. OAuth sign-in with `openclaw dexi login`.",
+  "kind": "memory",
+  "activation": { "onStartup": true },
+  "skills": ["./skills"],
+  "commandAliases": [{ "name": "dexi", "cliCommand": "dexi" }],
+  "contracts": {
+    "tools": [
+      "dexi_search",
+      "dexi_get",
+      "dexi_list",
+      "dexi_save",
+      "dexi_append",
+      "dexi_tags",
+      "dexi_folders",
+      "dexi_reviews_due",
+      "dexi_review_grade"
+    ]
+  },
+  "uiHints": {
+    "mcpUrl": {
+      "label": "Dexi MCP URL",
+      "placeholder": "https://mcp.dexi.net/mcp",
+      "help": "Leave blank for Dexi cloud. Only change for a self-hosted or local Dexi backend.",
+      "advanced": true
+    },
+    "autoRecall": {
+      "label": "Auto-recall",
+      "help": "Before each turn, search your notes for the incoming message and inject matching titles + snippets as <dexi-context>."
+    },
+    "recallResults": {
+      "label": "Max recalled notes",
+      "placeholder": "5",
+      "help": "Notes injected per turn (1-20)."
+    },
+    "recallMinSimilarity": {
+      "label": "Recall similarity floor",
+      "placeholder": "0.55",
+      "help": "Semantic-similarity threshold (0-1) below which notes are not injected.",
+      "advanced": true
+    },
+    "sessionDigest": {
+      "label": "Session digest",
+      "help": "Write one digest note per session (questions asked + last answer) when the session ends or goes idle. Off by default; never a note per turn."
+    },
+    "digestTag": {
+      "label": "Digest tag",
+      "placeholder": "#openclaw",
+      "help": "Hashtag placed on digest notes (letters, digits, underscore).",
+      "advanced": true
+    },
+    "digestIdleMinutes": {
+      "label": "Digest idle minutes",
+      "placeholder": "30",
+      "help": "Also flush a session's digest after this many idle minutes.",
+      "advanced": true
+    },
+    "readOnly": {
+      "label": "Read-only",
+      "help": "Request only the notes:read scope; save/append tools and /remember disappear; no digest."
+    },
+    "recallTimeoutMs": {
+      "label": "Recall timeout (ms)",
+      "placeholder": "2500",
+      "help": "Auto-recall is skipped if Dexi does not answer within this budget.",
+      "advanced": true
+    },
+    "toolTimeoutMs": {
+      "label": "Tool timeout (ms)",
+      "placeholder": "30000",
+      "advanced": true
+    },
+    "debug": {
+      "label": "Debug logging",
+      "help": "Verbose logs for recall, capture, and MCP calls.",
+      "advanced": true
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "mcpUrl": { "type": "string" },
+      "autoRecall": { "type": "boolean" },
+      "recallResults": { "type": "number", "minimum": 1, "maximum": 20 },
+      "recallMinSimilarity": { "type": "number", "minimum": 0, "maximum": 1 },
+      "sessionDigest": { "type": "boolean" },
+      "digestTag": { "type": "string" },
+      "digestIdleMinutes": { "type": "number", "minimum": 1 },
+      "readOnly": { "type": "boolean" },
+      "recallTimeoutMs": { "type": "number", "minimum": 200 },
+      "toolTimeoutMs": { "type": "number", "minimum": 1000 },
+      "debug": { "type": "boolean" }
+    }
+  }
+}
