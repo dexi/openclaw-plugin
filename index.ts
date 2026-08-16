@@ -27,7 +27,7 @@ import { buildPromptSection } from "./src/prompt.js"
 import { buildMemoryRuntime } from "./src/runtime.js"
 import { registerTools } from "./src/tools.js"
 
-export const PLUGIN_VERSION = "0.1.0"
+export const PLUGIN_VERSION = "0.1.1"
 
 function resolveStateDir(api: OpenClawPluginApi): string {
 	try {

@@ -21,7 +21,8 @@ The MCP-server route needs no install: `openclaw mcp add dexi --url https://mcp.
 
 ```bash
 openclaw plugins install openclaw-dexi
-openclaw dexi setup            # enables the plugin, makes it the memory slot, then signs you in
+openclaw plugins enable openclaw-dexi    # claims the memory slot (unlocks the `openclaw dexi` CLI)
+openclaw dexi setup                      # hook permissions + tool allowlist, then signs you in
 openclaw gateway restart
 ```
 
