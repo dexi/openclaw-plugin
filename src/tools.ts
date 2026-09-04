@@ -211,7 +211,7 @@ export function buildTools(api: DexiApi, cfg: DexiConfig): Record<(typeof TOOL_N
 	const dexi_bases = wrap(
 		"dexi_bases",
 		"Dexi: list bases",
-		"The user's saved bases — database-style views over notes (a reading list, open applications, a literature table) built from key:: value property lines — with each base's views (table/cards). Run one with dexi_query_base.",
+		"The user's saved bases — database-style views over notes (a reading list, open applications, a literature table) built from key:: value property lines — with each base's views (table/cards/list/map). Run one with dexi_query_base.",
 		Type.Object({ intent: Intent }),
 		async (p, signal) => {
 			const bases = await dexi.listBases(api, { ...call(p.intent), signal })
