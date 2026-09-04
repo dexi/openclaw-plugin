@@ -17,7 +17,7 @@ export function buildPromptSection(cfg: DexiConfig, params: { availableTools: Se
 	]
 	if (hasSearch) {
 		lines.push(
-			"Before answering questions about the user's own material, research, or past decisions, search it with dexi_search (hybrid keyword+semantic; full_text=true to read bodies, dexi_get for one note). Relevant notes may already be pre-loaded in a <dexi-context> block — treat that as a starting point, not the answer. Cite notes by title with their url.",
+			"Before answering questions about the user's own material, research, or past decisions, search it with dexi_search (hybrid keyword+semantic; full_text=true to read bodies, dexi_get for one note). Relevant notes may already be pre-loaded in a <dexi-context> block — treat that as a starting point, not the answer. Cite notes by title with their url. For a list the user has already defined (a reading list, open applications), dexi_bases + dexi_query_base run their saved filter instead of re-deriving it.",
 		)
 	}
 	if (cfg.readOnly || !hasSave) {

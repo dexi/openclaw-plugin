@@ -38,6 +38,7 @@ export type NoteItem = {
 	updated?: string
 	similarity?: number
 	folder?: string
+	properties?: Record<string, unknown>
 	shared?: boolean
 	owner?: string
 	url?: string
@@ -319,6 +320,33 @@ export const dexi = {
 		return {
 			folders: Array.isArray(res.folders) ? (res.folders as Array<{ name: string; note_count: number }>) : [],
 			unfiled_count: typeof res.unfiled_count === "number" ? res.unfiled_count : undefined,
+		}
+	},
+
+	async listBases(api: DexiApi, opts: ToolCallOptions = {}) {
+		const res = await api.callTool("list_bases", {}, opts)
+		return Array.isArray(res.bases)
+			? (res.bases as Array<{ name: string; views: Array<{ name: string; type: string }> }>)
+			: []
+	},
+
+	async queryBase(
+		api: DexiApi,
+		params: { name: string; view?: string; page?: number; size?: number; fullText?: boolean },
+		opts: ToolCallOptions = {},
+	) {
+		const res = await api.callTool(
+			"query_base",
+			{ name: params.name, view: params.view, page: params.page, size: params.size, full_text: params.fullText || undefined },
+			opts,
+		)
+		return {
+			base: typeof res.base === "string" ? res.base : params.name,
+			view: typeof res.view === "string" ? res.view : undefined,
+			columns: Array.isArray(res.columns) ? (res.columns as string[]) : [],
+			items: items(res),
+			total: typeof res.total === "number" ? res.total : undefined,
+			page: res.page,
 		}
 	},
 

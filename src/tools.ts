@@ -7,7 +7,7 @@
  *
  * Write tools (dexi_save / dexi_append / dexi_review_grade) are registered
  * through factories that return null when the connection is read-only, so
- * the manifest can still declare all nine names.
+ * the manifest can still declare all eleven names.
  */
 import type { AnyAgentTool, OpenClawPluginApi } from "openclaw/plugin-sdk/plugin-entry"
 import { type Static, type TSchema, Type } from "typebox"
@@ -23,6 +23,8 @@ export const TOOL_NAMES = [
 	"dexi_append",
 	"dexi_tags",
 	"dexi_folders",
+	"dexi_bases",
+	"dexi_query_base",
 	"dexi_reviews_due",
 	"dexi_review_grade",
 ] as const
@@ -44,10 +46,12 @@ function text<T>(t: string, details: T): TextResult<T> {
 
 function fmtItem(i: NoteItem, idx: number, opts: { showBody?: boolean } = {}): string {
 	const head = `${idx + 1}. ${(i.title || "(untitled)").trim()} [${i.id}]`
+	const props = i.properties && typeof i.properties === "object" ? Object.entries(i.properties) : []
 	const meta = [
 		i.source,
 		(i.tags || []).join(" ") || undefined,
 		i.folder ? `folder: ${i.folder}` : undefined,
+		props.length ? props.map(([k, v]) => `${k}: ${fmtProp(v)}`).join(", ") : undefined,
 		typeof i.similarity === "number" ? `${Math.round(i.similarity * 100)}%` : undefined,
 		(i as { match?: string }).match,
 		i.updated ? `updated ${String(i.updated).slice(0, 10)}` : undefined,
@@ -59,6 +63,16 @@ function fmtItem(i: NoteItem, idx: number, opts: { showBody?: boolean } = {}): s
 	const body = opts.showBody && typeof i.text === "string" ? i.text : i.snippet
 	if (body) lines.push(`   ${body.trim().replace(/\n/g, "\n   ")}${i.text_truncated ? "\n   […truncated]" : ""}`)
 	return lines.join("\n")
+}
+
+function fmtProp(v: unknown): string {
+	if (Array.isArray(v)) return v.map(fmtProp).join(" ")
+	if (v && typeof v === "object") {
+		const link = (v as { link?: unknown; display?: unknown })
+		if (typeof link.link === "string") return `[[${typeof link.display === "string" && link.display ? link.display : link.link}]]`
+		return JSON.stringify(v)
+	}
+	return String(v)
 }
 
 function fmtList(items: NoteItem[], opts: { showBody?: boolean; total?: number; label?: string } = {}): string {
@@ -147,7 +161,7 @@ export function buildTools(api: DexiApi, cfg: DexiConfig): Record<(typeof TOOL_N
 	const dexi_save = wrap(
 		"dexi_save",
 		"Dexi: save note",
-		"Create a note in the user's Dexi library. Distill, don't dump: a short specific noun-phrase title, plain text body, 1-3 existing #hashtags inline (check dexi_tags), [[Wiki Links]] welcome. Search first — prefer dexi_append to an existing match over a near-duplicate.",
+		"Create a note in the user's Dexi library. Distill, don't dump: a short specific noun-phrase title, plain text body, 1-3 existing #hashtags inline (check dexi_tags), [[Wiki Links]] welcome. Structured facts the user may filter on later (status, rating, due date) go on their own lines as key:: value — Dexi parses them into properties that bases can query. Search first — prefer dexi_append to an existing match over a near-duplicate.",
 		Type.Object({
 			title: Type.String({ description: "Short noun-phrase title", maxLength: 500 }),
 			text: Type.String({ description: "Plain-text body; #hashtags inline become tags" }),
@@ -194,6 +208,38 @@ export function buildTools(api: DexiApi, cfg: DexiConfig): Record<(typeof TOOL_N
 		},
 	)
 
+	const dexi_bases = wrap(
+		"dexi_bases",
+		"Dexi: list bases",
+		"The user's saved bases — database-style views over notes (a reading list, open applications, a literature table) built from key:: value property lines — with each base's views (table/cards). Run one with dexi_query_base.",
+		Type.Object({ intent: Intent }),
+		async (p, signal) => {
+			const bases = await dexi.listBases(api, { ...call(p.intent), signal })
+			const lines = bases.map((b) => `${b.name} — views: ${b.views.map((v) => `${v.name} (${v.type})`).join(", ") || "none"}`)
+			return text(lines.length ? lines.join("\n") : "No bases yet.", { bases })
+		},
+	)
+
+	const dexi_query_base = wrap(
+		"dexi_query_base",
+		"Dexi: query base",
+		"Run a saved Dexi base: the user's own filter and sort applied to every note they can see, each with its key:: value properties. Use it for 'show me my reading list' / 'what's due this week' instead of re-deriving the filter (names from dexi_bases). full_text=true returns bodies (max 10).",
+		Type.Object({
+			name: Type.String({ description: "Base name (case-insensitive)", minLength: 1, maxLength: 100 }),
+			view: Type.Optional(Type.String({ description: "View name within the base (default: its first view)", maxLength: 100 })),
+			page: Type.Optional(Type.Integer({ minimum: 1 })),
+			size: Type.Optional(Type.Integer({ description: "Max results (default 10, max 50)", minimum: 1, maximum: 50 })),
+			full_text: Type.Optional(Type.Boolean({ description: "Return bodies (caps size at 10)" })),
+			intent: Intent,
+		}),
+		async (p, signal) => {
+			const r = await dexi.queryBase(api, { name: p.name, view: p.view, page: p.page, size: p.size, fullText: p.full_text }, { ...call(p.intent), signal })
+			const label = `${r.base}${r.view ? ` / ${r.view}` : ""}`
+			const head = r.columns.length ? `Columns: ${r.columns.join(", ")}\n\n` : ""
+			return text(head + fmtList(r.items, { showBody: Boolean(p.full_text), total: r.total, label: `notes in ${label}` }), r)
+		},
+	)
+
 	const dexi_reviews_due = wrap(
 		"dexi_reviews_due",
 		"Dexi: due reviews",
@@ -220,10 +266,10 @@ export function buildTools(api: DexiApi, cfg: DexiConfig): Record<(typeof TOOL_N
 		},
 	)
 
-	return { dexi_search, dexi_get, dexi_list, dexi_save, dexi_append, dexi_tags, dexi_folders, dexi_reviews_due, dexi_review_grade }
+	return { dexi_search, dexi_get, dexi_list, dexi_save, dexi_append, dexi_tags, dexi_folders, dexi_bases, dexi_query_base, dexi_reviews_due, dexi_review_grade }
 }
 
-/** Register all nine tools; write tools become no-ops (null factory) when read-only. */
+/** Register all eleven tools; write tools become no-ops (null factory) when read-only. */
 export function registerTools(api: OpenClawPluginApi, client: DexiApi, cfg: DexiConfig): void {
 	const tools = buildTools(client, cfg)
 	for (const name of TOOL_NAMES) {

@@ -38,6 +38,16 @@ describe("dexi.* helpers (wire shapes)", () => {
 		await dexi.listNotes(api, { tag: "#x", since: undefined, page: 2 })
 		expect(api.calls[0]!.args).toEqual({ tag: "#x", page: 2 })
 	})
+	it("query_base sends only set params and keeps columns", async () => {
+		const api = new FakeDexiClient()
+		const r = await dexi.queryBase(api, { name: "reading list", view: undefined, size: 5 })
+		expect(api.calls[0]).toMatchObject({ name: "query_base", args: { name: "reading list", size: 5 } })
+		expect(api.calls[0]!.args).not.toHaveProperty("full_text")
+		expect(r.columns).toEqual(["file.name", "status", "rating"])
+		expect(r.items[0]!.url).toBe("https://app.dexi.net/dashboard/notes/p1")
+		await dexi.queryBase(api, { name: "x", fullText: true, page: 2 })
+		expect(api.calls[1]!.args).toEqual({ name: "x", page: 2, full_text: true })
+	})
 	it("append uses update_note mode=append", async () => {
 		const api = new FakeDexiClient()
 		await dexi.appendNote(api, "n1", "more")
@@ -49,7 +59,7 @@ describe("buildTools", () => {
 	const api = new FakeDexiClient()
 	const tools = buildTools(api, cfg()) as unknown as Record<string, Tool>
 
-	it("defines all nine dexi_* tools with an intent parameter", () => {
+	it("defines all eleven dexi_* tools with an intent parameter", () => {
 		expect(Object.keys(tools).sort()).toEqual([...TOOL_NAMES].sort())
 		for (const name of TOOL_NAMES) {
 			expect(tools[name]!.name).toBe(name)
@@ -81,6 +91,17 @@ describe("buildTools", () => {
 		expect(graded.content[0]!.text).toContain("next in 6 days")
 	})
 
+	it("dexi_bases / dexi_query_base render views, columns and properties", async () => {
+		const bases = await tools.dexi_bases!.execute("t", {})
+		expect(bases.content[0]!.text).toBe("Reading list — views: Queue (table), Wall (cards)")
+		const q = await tools.dexi_query_base!.execute("t", { name: "Reading list", view: "Wall" })
+		const out = q.content[0]!.text
+		expect(out).toContain("Columns: file.name, status, rating")
+		expect(out).toContain("1 notes in Reading list / Wall total, showing 1")
+		expect(out).toContain("status: unread, rating: 4, ref: [[Some note]]")
+		expect((q.details as { items: unknown[] }).items).toHaveLength(1)
+	})
+
 	it("surfaces auth problems as a clear error", async () => {
 		const bad = new FakeDexiClient(() => new DexiAuthError())
 		const t = buildTools(bad, cfg()) as unknown as Record<string, Tool>
@@ -103,7 +124,7 @@ describe("registerTools", () => {
 			registerTool: (tool: unknown, opts: { name?: string }) => registered.push({ tool, name: opts.name ?? "?" }),
 		}
 	}
-	it("registers all nine names, write tools through factories", () => {
+	it("registers all eleven names, write tools through factories", () => {
 		const a = fakeApi()
 		registerTools(a as never, new FakeDexiClient(), cfg())
 		expect(a.registered.map((r) => r.name)).toEqual([...TOOL_NAMES])

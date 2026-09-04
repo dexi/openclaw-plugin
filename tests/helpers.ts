@@ -63,6 +63,17 @@ export function defaultHandler(name: string, args: Record<string, unknown>): Rec
 			return { tags: [{ tag: "#openclaw", count: 4 }, { tag: "#t1", count: 2 }] }
 		case "list_folders":
 			return { folders: [{ name: "Work", note_count: 3 }], unfiled_count: 7 }
+		case "list_bases":
+			return { bases: [{ name: "Reading list", views: [{ name: "Queue", type: "table" }, { name: "Wall", type: "cards" }] }] }
+		case "query_base":
+			return {
+				base: "Reading list",
+				view: args.view ?? "Queue",
+				columns: ["file.name", "status", "rating"],
+				items: [note("p1", { properties: { status: "unread", rating: 4, ref: { link: "Some note", display: "" } } })],
+				total: 1,
+				page: args.page ?? 1,
+			}
 		case "get_due_reviews":
 			return { items: [{ id: "r1", title: "Card 1", text: "Body", is_new: true }], due_count: 1 }
 		case "grade_review":
