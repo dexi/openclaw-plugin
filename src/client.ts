@@ -203,7 +203,7 @@ function firstText(content: unknown): string {
 }
 
 // ---------------------------------------------------------------------------
-// Typed helpers over the Dexi MCP tools (backend/app/mcp/tools.py). Every
+// Typed helpers over the Dexi MCP tools (backend/app/mcp/tools/). Every
 // call passes an `intent` sentence for Dexi's aggregate tool analytics; args
 // with undefined values are stripped before the wire, so optional flags such
 // as full_text/since only travel when set.

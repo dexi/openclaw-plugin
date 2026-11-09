@@ -1,12 +1,12 @@
 # Dexi for OpenClaw
 
-Your [Dexi](https://dexi.net) notes library — clipped web pages, emailed articles, RSS entries, and typed notes — as [OpenClaw](https://openclaw.ai)'s long-term memory.
+Your [Dexi](https://dexi.net) notes library — clipped web pages, emailed articles, RSS entries, and typed notes — as [OpenClaw](https://openclaw.ai)'s long-term memory — the same notes Claude, ChatGPT, Gemini, Hermes and any other MCP client you connect read and write, so OpenClaw shares one memory with them instead of keeping its own.
 
 Two ways to use it, pick one:
 
 | | Native MCP server (`openclaw mcp add dexi …`) | **Memory plugin (this package)** |
 |---|---|---|
-| Tools | all 12 Dexi tools as `dexi__*` | compact `dexi_*` set (search / get / list / save / append / tags / folders / reviews) |
+| Tools | all 18 Dexi tools as `dexi__*` | compact `dexi_*` set (search / get / list / save / append / tags / folders / reviews) |
 | Auto-recall before each turn (`<dexi-context>`) | — | ✅ |
 | Memory prompt section | — | ✅ |
 | `/remember` · `/recall` commands | — | ✅ |

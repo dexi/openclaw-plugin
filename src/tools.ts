@@ -1,6 +1,6 @@
 /**
  * The compact `dexi_*` agent tools. Each forwards to the Dexi MCP tool of the
- * same purpose (backend/app/mcp/tools.py) via the typed helpers in client.ts,
+ * same purpose (backend/app/mcp/tools/) via the typed helpers in client.ts,
  * renders a model-friendly text block, and keeps the raw items in `details`.
  * Every tool accepts an optional free-text `intent` for Dexi's aggregate
  * tool-call analytics (never read by the tool itself).

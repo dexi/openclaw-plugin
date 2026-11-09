@@ -1,7 +1,7 @@
 {
   "id": "openclaw-dexi",
   "name": "Dexi",
-  "description": "Your Dexi notes library as OpenClaw's long-term memory: auto-recall before each turn, dexi_* tools, /remember and /recall, optional session digest. OAuth sign-in with `openclaw dexi login`.",
+  "description": "Your Dexi notes library as OpenClaw's long-term memory, shared with every other assistant you connect to Dexi: auto-recall before each turn, dexi_* tools, /remember and /recall, optional session digest. OAuth sign-in with `openclaw dexi login`.",
   "kind": "memory",
   "activation": { "onStartup": true },
   "skills": ["./skills"],

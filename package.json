@@ -1,8 +1,8 @@
 {
   "name": "openclaw-dexi",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "type": "module",
-  "description": "Dexi memory plugin for OpenClaw — your notes library as the agent's long-term memory (auto-recall, dexi_* tools, /remember, optional session digest)",
+  "description": "Dexi memory plugin for OpenClaw — your notes library as the agent's long-term memory, shared with every other assistant you connect to Dexi (auto-recall, dexi_* tools, /remember, optional session digest)",
   "license": "MIT",
   "author": {
     "name": "Dexi",
