@@ -64,7 +64,7 @@ describe("SessionCapture flush", () => {
 		expect(api.callsTo("create_note")).toHaveLength(1)
 		const created = api.callsTo("create_note")[0]!.args
 		expect(created.title).toMatch(/^OpenClaw session \d{4}-\d{2}-\d{2} — first question$/)
-		expect(created.text).toContain("#openclaw Session digest written by OpenClaw (telegram)")
+		expect(created.text).toContain("#openclaw #memory Session digest written by OpenClaw (telegram)")
 		expect(created.text).toContain("Session: s1")
 		expect(created.intent).toBe("session digest (compaction)")
 		expect(state.get("s1")?.noteId).toBe("new-1")

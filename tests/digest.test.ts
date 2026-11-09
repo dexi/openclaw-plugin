@@ -15,7 +15,7 @@ describe("buildDigest", () => {
 		expect(d.title).toBe("OpenClaw session 2026-08-15 — How do I set up pgvector on Railway?")
 		expect(d.text).toBe(
 			[
-				"#openclaw Session digest written by OpenClaw (telegram) on 2026-08-15 09:30.",
+				"#openclaw #memory Session digest written by OpenClaw (telegram) on 2026-08-15 09:30.",
 				"",
 				"Asked:",
 				"- How do I set up pgvector on Railway?",
@@ -32,6 +32,8 @@ describe("buildDigest", () => {
 
 	it("returns null without a user turn, lists at most 12 asks, and caps the total", () => {
 		expect(buildDigest([], { tag: "#t" })).toBeNull()
+		// the shared tag is never doubled when the agent tag already is #memory
+		expect(buildDigest([{ user: "q", assistant: "a" }], { tag: "#memory", now: NOW })!.text).toMatch(/^#memory Session digest/)
 		expect(buildDigest([{ user: "", assistant: "only assistant" }], { tag: "#t" })).toBeNull()
 		const many = Array.from({ length: 15 }, (_, i) => ({ user: `q${i} ${"x".repeat(300)}`, assistant: "a".repeat(5000) }))
 		const d = buildDigest(many, { tag: "#t", now: NOW })!

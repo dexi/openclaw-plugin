@@ -1,17 +1,20 @@
 /**
- * `openclaw dexi …` — setup | login | logout | status | search | save
+ * `openclaw dexi …` — setup | login | logout | status | search | save | import
  *
  * `setup` edits openclaw.json through OpenClaw's own config writer
  * (api.runtime.config.mutateConfigFile) so validation/formatting stay the
  * host's, then runs `login`. Everything else is a thin front over the same
  * DexiClient the gateway uses.
  */
+import os from "node:os"
+import path from "node:path"
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk/plugin-entry"
 import { login, logout } from "./auth/login.js"
 import { LOGIN_HINT } from "./auth/provider.js"
 import type { OAuthStore } from "./auth/store.js"
 import { DexiClient, dexi } from "./client.js"
 import { type DexiConfig, PLUGIN_ID, normalizeTag } from "./config.js"
+import { FileImportStateStore, type ImportStateStore, discoverMemoryFiles, planImport, runImport } from "./import.js"
 import { TOOL_NAMES } from "./tools.js"
 
 type AnyRecord = Record<string, unknown>
@@ -85,6 +88,14 @@ export type CliDeps = {
 	cfg: DexiConfig
 	version: string
 	makeClient: (opts?: { timeoutMs?: number }) => DexiClient
+	/** Manifest of imported memory files (`<stateDir>/dexi/imports.json`). */
+	importState: ImportStateStore
+}
+
+/** OpenClaw's agent workspace — where memory-core keeps MEMORY.md and memory/. */
+export function defaultWorkspace(config: unknown): string {
+	const ws = (config as { agents?: { defaults?: { workspace?: unknown } } } | undefined)?.agents?.defaults?.workspace
+	return typeof ws === "string" && ws.trim() ? ws.replace(/^~(?=$|\/)/, os.homedir()) : path.join(os.homedir(), ".openclaw", "workspace")
 }
 
 export function registerCli(api: OpenClawPluginApi, deps: CliDeps): void {
@@ -253,7 +264,47 @@ export function registerCli(api: OpenClawPluginApi, deps: CliDeps): void {
 						await client.close()
 					}
 				})
+
+			cmd
+				.command("import [path]")
+				.description(
+					"Import an agent's memory files into Dexi — MEMORY.md / USER.md one note per section, memory/YYYY-MM-DD.md one note per day; re-running updates changed sections instead of duplicating (default path: the OpenClaw workspace)",
+				)
+				.option("--tag <tag>", "tag for the agent whose memory this was (default: digestTag, #openclaw)")
+				.option("--all", "import every .md file under the path, not just the memory layout")
+				.option("--dry-run", "show what would be created or updated without writing")
+				.action(async (target: string | undefined, opts: { tag?: string; all?: boolean; dryRun?: boolean }) => {
+					if (deps.cfg.readOnly && !opts.dryRun) {
+						print("This connection is read-only (readOnly: true).")
+						process.exitCode = 1
+						return
+					}
+					const root = target ?? defaultWorkspace(api.config)
+					const files = discoverMemoryFiles(root, { all: opts.all })
+					if (files.length === 0) {
+						print(`No memory files under ${root}.`)
+						print("Looked for MEMORY.md, USER.md and memory/**/*.md (or memories/). Pass a file, a workspace directory, or --all for every .md file.")
+						process.exitCode = 1
+						return
+					}
+					const plan = planImport(files, { agentTag: normalizeTag(opts.tag, deps.cfg.digestTag) })
+					print(`${files.length} file(s) → ${plan.length} note(s) from ${root}${opts.dryRun ? " (dry run — nothing written)" : ""}`)
+					if (opts.dryRun) {
+						const sum = await runImport({ mcpUrl: deps.cfg.mcpUrl, isConnected: () => true, callTool: async () => ({}), close: async () => {} }, plan, deps.importState, { dryRun: true, print })
+						print(`Would create ${sum.created}, update ${sum.updated}; ${sum.unchanged} unchanged since the last import.`)
+						return
+					}
+					const client = deps.makeClient({ timeoutMs: 60_000 })
+					try {
+						const sum = await runImport(client, plan, deps.importState, { print })
+						print(`Created ${sum.created}, updated ${sum.updated}, unchanged ${sum.unchanged}${sum.failed ? `, FAILED ${sum.failed}` : ""}.`)
+						if (sum.failed) process.exitCode = 1
+						else if (sum.created || sum.updated) print(`Find them in Dexi with the ${normalizeTag(opts.tag, deps.cfg.digestTag)} or #imported tag.`)
+					} finally {
+						await client.close()
+					}
+				})
 		},
-		{ descriptors: [{ name: "dexi", description: "Dexi memory plugin (setup, login, status, search, save)", hasSubcommands: true }] },
+		{ descriptors: [{ name: "dexi", description: "Dexi memory plugin (setup, login, status, search, save, import)", hasSubcommands: true }] },
 	)
 }

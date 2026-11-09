@@ -5,6 +5,7 @@
  * Port of hermes provider.system_prompt_block.
  */
 import type { DexiConfig } from "./config.js"
+import { digestTags } from "./digest.js"
 
 export function buildPromptSection(cfg: DexiConfig, params: { availableTools: Set<string> }): string[] {
 	const hasSearch = params.availableTools.has("dexi_search")
@@ -28,7 +29,7 @@ export function buildPromptSection(cfg: DexiConfig, params: { availableTools: Se
 		)
 	}
 	if (cfg.sessionDigest && !cfg.readOnly) {
-		lines.push(`A ${cfg.digestTag} digest note of this session is written to Dexi automatically when it ends.`)
+		lines.push(`A digest note of this session, tagged ${digestTags(cfg.digestTag)}, is written to Dexi automatically when it ends.`)
 	}
 	return lines
 }

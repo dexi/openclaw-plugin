@@ -39,9 +39,10 @@ Requires OpenClaw ≥ 2026.5.7 (Node 22+).
 - **Auto-recall** — before each interactive turn, semantic search over your notes for the incoming message (plus a keyword pass when it contains a `#hashtag` or a "quoted phrase"); hits above the similarity floor are injected as a `<dexi-context>` block of titles + snippets. Never full bodies — the model calls `dexi_get`/`full_text` when it wants one. Best-effort, ~2.5 s budget, failures inject nothing.
 - **Tools** — `dexi_search` (hybrid keyword+semantic, `full_text` option), `dexi_get`, `dexi_list` (source/tag/folder/period/`since`), `dexi_save`, `dexi_append`, `dexi_tags`, `dexi_folders`, `dexi_bases` + `dexi_query_base` (the user's saved database views over `key:: value` properties), `dexi_reviews_due`, `dexi_review_grade`. Each forwards to Dexi's MCP tool of the same purpose; each accepts an optional `intent` sentence for Dexi's aggregate tool analytics.
 - **Commands** — `/remember <text>` saves a note (first line = title, `#hashtags` become tags), `/recall <query>` searches, `/dexi-digest` writes this session's digest now.
-- **Session digest** (off by default) — one note per conversation, written when the session ends (`/new`, `/reset`, idle/daily rotation), before compaction, after `digestIdleMinutes` of quiet, or at shutdown — never per turn: the questions asked, the last answer, and the session key, tagged `#openclaw`. Later flushes append to the same note (the session→note mapping is persisted in `~/.openclaw/dexi/digests.json`, so gateway restarts and one-shot `openclaw agent` runs don't create duplicates). Deterministic; no LLM call in the plugin.
+- **Session digest** (off by default) — one note per conversation, written when the session ends (`/new`, `/reset`, idle/daily rotation), before compaction, after `digestIdleMinutes` of quiet, or at shutdown — never per turn: the questions asked, the last answer, and the session key, tagged `#openclaw` plus `#memory` (the tag every Dexi agent plugin shares, so a later agent finds the trail with the rest of your memory — see [Switching agents](https://docs.dexi.net/mcp/shared-memory#switching-agents)). Later flushes append to the same note (the session→note mapping is persisted in `~/.openclaw/dexi/digests.json`, so gateway restarts and one-shot `openclaw agent` runs don't create duplicates). Deterministic; no LLM call in the plugin.
 - **Skills** — `dexi-capture`, `dexi-recall`, `dexi-review` (spaced-repetition quiz over your due cards) load while the plugin is enabled.
-- **Not done, on purpose** — no note per turn, no mirroring of transcripts or `MEMORY.md`, no LLM-written summaries. Dexi is your notes app; the agent is a reader and an occasional, deliberate writer.
+- **Import existing memory** (`openclaw dexi import [path]`) — one-shot, deterministic move of an agent's memory files into Dexi: `MEMORY.md` / `USER.md` become one note per top-level section, `memory/YYYY-MM-DD.md` daily logs one note per day (with a `logged::` date property), all tagged `#memory #imported` plus the source agent's tag (`--tag`, default `digestTag`). Default path is the OpenClaw workspace; point it at `~/.hermes/memories` or any folder (`--all` for every `.md`) to bring another agent's memory in. A manifest (`~/.openclaw/dexi/imports.json`) makes re-runs idempotent: unchanged sections are skipped, changed ones rewritten in place. `--dry-run` shows the plan. This is how a blank Dexi account is populated before switching agents — see [Switching agents](https://docs.dexi.net/mcp/shared-memory#switching-agents).
+- **Not done, on purpose** — no note per turn, no live mirroring of transcripts or `MEMORY.md` (import is explicit and one-shot), no LLM-written summaries. Dexi is your notes app; the agent is a reader and an occasional, deliberate writer.
 
 ## What leaves your device
 
@@ -65,7 +66,7 @@ Nothing else — no full transcripts, no tool-call history, no local memory file
 | `recallResults` | `5` | max notes injected (1–20) |
 | `recallMinSimilarity` | `0.55` | semantic similarity floor (0–1) |
 | `sessionDigest` | `false` | write one digest note per session |
-| `digestTag` | `#openclaw` | tag on digest notes (`\w` chars only — Dexi's hashtag syntax) |
+| `digestTag` | `#openclaw` | agent tag on digest notes (`\w` chars only — Dexi's hashtag syntax); `#memory` is always added beside it |
 | `digestIdleMinutes` | `30` | also flush after this much quiet |
 | `readOnly` | `false` | request `notes:read` only; hide write tools |
 | `recallTimeoutMs` | `2500` | recall is skipped past this |
@@ -73,7 +74,7 @@ Nothing else — no full transcripts, no tool-call history, no local memory file
 | `mcpUrl` | `https://mcp.dexi.net/mcp` | override for self-hosted/dev |
 | `debug` | `false` | verbose plugin logs |
 
-CLI: `openclaw dexi setup | login [--read-only] [--no-browser] [--code <value>] | logout | status | search <query> | save <text>`.
+CLI: `openclaw dexi setup | login [--read-only] [--no-browser] [--code <value>] | logout | status | search <query> | save <text> | import [path] [--tag <tag>] [--all] [--dry-run]`.
 
 Manage or revoke the grant itself in Dexi → **Settings → Connected apps** — you can also narrow it to one folder/tag there; the change applies on the next request.
 

@@ -98,7 +98,7 @@ describe("buildRecallContext / buildPromptSection", () => {
 		const ro = buildPromptSection(cfg({ readOnly: true }), { availableTools: new Set(["dexi_search"]) }).join("\n")
 		expect(ro).toContain("read-only")
 		const dg = buildPromptSection(cfg({ sessionDigest: true }), { availableTools: tools }).join("\n")
-		expect(dg).toContain("#openclaw digest note")
+		expect(dg).toContain("tagged #openclaw #memory")
 		expect(buildPromptSection(cfg(), { availableTools: new Set() })).toEqual([])
 	})
 })

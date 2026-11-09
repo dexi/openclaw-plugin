@@ -14,6 +14,19 @@ export const MAX_TOTAL = 6000
 
 export type Turn = { user: string; assistant: string }
 
+/**
+ * Tag shared by every agent's memory notes in Dexi — the Claude Code plugin
+ * saves decisions under it and the Hermes plugin's digests carry it too — so
+ * a search for #memory finds what any previous agent remembered, while the
+ * configurable digestTag (#openclaw) still identifies this agent's notes.
+ */
+export const SHARED_MEMORY_TAG = "#memory"
+
+/** `"#openclaw #memory"` — the agent tag plus the shared one, deduplicated. */
+export function digestTags(tag: string): string {
+	return tag === SHARED_MEMORY_TAG ? tag : `${tag} ${SHARED_MEMORY_TAG}`
+}
+
 function stamp(d: Date): { date: string; dateTime: string } {
 	const p = (n: number) => String(n).padStart(2, "0")
 	const date = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
@@ -50,7 +63,7 @@ export function buildDigest(
 	const when = stamp(opts.now ?? new Date())
 	const title = `OpenClaw session ${when.date} — ${firstLine(firstUser, 60)}`
 	const lines = [
-		`${opts.tag} Session digest written by OpenClaw${opts.channel ? ` (${opts.channel})` : ""} on ${when.dateTime}.`,
+		`${digestTags(opts.tag)} Session digest written by OpenClaw${opts.channel ? ` (${opts.channel})` : ""} on ${when.dateTime}.`,
 		"",
 		"Asked:",
 		...digestTurnLines(turns),

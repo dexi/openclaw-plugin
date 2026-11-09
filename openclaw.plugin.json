@@ -50,7 +50,7 @@
     "digestTag": {
       "label": "Digest tag",
       "placeholder": "#openclaw",
-      "help": "Hashtag placed on digest notes (letters, digits, underscore).",
+      "help": "Hashtag placed on digest notes (letters, digits, underscore). Digests also carry #memory, the tag shared with every other agent connected to Dexi.",
       "advanced": true
     },
     "digestIdleMinutes": {

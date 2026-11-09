@@ -18,6 +18,7 @@ import { OAuthStore, defaultStateDir } from "./src/auth/store.js"
 import { SessionCapture } from "./src/capture.js"
 import { registerCli } from "./src/cli.js"
 import { FileDigestStateStore } from "./src/digest-state.js"
+import { FileImportStateStore } from "./src/import.js"
 import { DexiClient } from "./src/client.js"
 import { registerCommands } from "./src/commands.js"
 import { PLUGIN_ID, PLUGIN_NAME, dexiConfigSchema, parseConfig } from "./src/config.js"
@@ -27,7 +28,7 @@ import { buildPromptSection } from "./src/prompt.js"
 import { buildMemoryRuntime } from "./src/runtime.js"
 import { registerTools } from "./src/tools.js"
 
-export const PLUGIN_VERSION = "0.2.2"
+export const PLUGIN_VERSION = "0.3.0"
 
 function resolveStateDir(api: OpenClawPluginApi): string {
 	try {
@@ -80,6 +81,7 @@ export default definePluginEntry({
 			store,
 			cfg,
 			version: PLUGIN_VERSION,
+			importState: FileImportStateStore.forStateDir(stateDir),
 			makeClient: (opts) =>
 				new DexiClient({
 					mcpUrl: cfg.mcpUrl,
